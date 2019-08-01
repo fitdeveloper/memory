@@ -59,7 +59,9 @@ import Table4 from './tables/Table4 ';
 import Table7 from './tables/Table7';
 
 const SIDE = 6
-const SYMBOLS = '😀🎉💖🎩🐶🐱🦄🐬🌍🌛🌞💫🍎🍌🍓🍐🍟🍿'
+
+const SYMBOLS = '🎉💖🎩🐶🐱🐬🌛💫🍎🍌🍓🍟'
+const VISUAL_PAUSE_MSECS = 750
 
 var data = [
   {id: 1, name: 'Gob', value: '2'},
@@ -68,7 +70,14 @@ var data = [
 ];
 
 class App extends Component {
-  cards = this.generateCards()
+
+  state = { 
+    cards : this.generateCards(),
+    currentPair: [],
+    guesses : 0,
+    matchedCardIndices : [],
+
+  }
 
   generateCards() {
     const result = []
@@ -81,28 +90,75 @@ class App extends Component {
     return shuffle(result)
   }
 
-  handleCardClick(card) {
-    console.log(card, 'clicked', this)
+  // Arrow fx for binding
+handleCardClick = index => {
+  const { currentPair } = this.state
+
+  if (currentPair.length === 2) {
+    return
+  }
+
+  if (currentPair.length === 0) {
+    this.setState({ currentPair: [index] })
+    return
+  }
+
+  this.handleNewPairClosedBy(index)
+}
+
+handleNewPairClosedBy(index){
+const { cards,  currentPair ,  guesses , matchedCardIndices } = this.state
+const newPair = [ currentPair[0], index ]
+const newGuesses = guesses + 1 
+const matched  = cards[ newPair[0]] === cards[newPair[1]]
+
+this.setState({ currentPair: newPair, guesses: newGuesses})
+if(matched) { 
+  this.setState({matchedCardIndices: [...matchedCardIndices, ...newPair]})
+}
+setTimeout(() => this.setState({currentPair: []}), VISUAL_PAUSE_MSECS)
+}
+
+
+  getFeedBackForCard(index) {
+    const {currentPair, matchedCardIndices } = this.state
+    const indexMatched =  matchedCardIndices.includes(index)
+
+    if(currentPair.length <2 ){
+        return indexMatched || index ==currentPair[0] ?  'visible' : 'hidden'
+    }
+    
+    if(currentPair.includes(index) ){
+         return indexMatched ?  'justMatched' : 'justMismatched'
+    }
+
+
+    return indexMatched ? 'visible ' : 'hidden'
+
   }
 
 
-
-
   render() {
+
+    const  {cards , guesses , matchedCardIndices} = this.state
+    const won  = matchedCardIndices.length === cards.length
+
     return (
-      <div className="">
-        {/* <GuessCount guesses={0} />
-        { this.cards.map((card, index)=> (
+      <div className="memory">
+        <GuessCount guesses={0} />
+        { cards.map((card, index)=> (
           <Card 
           card={card}
-          feedback="hidden"
+          feedback={this.getFeedBackForCard(index)}
           key={index}
-          onClick={(card) => this.handleCardClick(card)} />
+          index={index}
+          onClick={this.handleCardClick} />
         )) }
-        <HallOfFame entries={FAKE_HOF} /> */}
-        {/* 
-            const won = new Date().getSeconds() % 2 === 0
-        <Card card="😀" feedback="hidden" onClick={this.handleCardClick} />
+        <HallOfFame entries={FAKE_HOF} />
+
+                {won && <p>GAGNÉ !</p>}
+      {/* 
+              <Card card="😀" feedback="hidden" onClick={this.handleCardClick} />
         <Card card="🎉" feedback="justMatched" onClick={this.handleCardClick} />
         <Card
           card="💖"
@@ -112,12 +168,11 @@ class App extends Component {
         <Card card="🎩" feedback="visible" onClick={this.handleCardClick} />
         <Card card="🐶" feedback="hidden" onClick={this.handleCardClick} />
         <Card card="🐱" feedback="justMatched" onClick={this.handleCardClick} /> 
-                {won && <p>GAGNÉ !</p>} */}
 
-        <div className="App">
+      <div className="App">
          <p className="Table-header"> Basic Table </p>
-         <Table7 data={data}/></div>
-      </div>
+         <Table7 data={data}/></div> */}
+      </div> 
     
     )
   }
